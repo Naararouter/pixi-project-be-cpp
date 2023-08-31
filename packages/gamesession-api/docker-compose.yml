@@ -1,0 +1,22 @@
+version: '3'
+services:
+#  db:
+#    image: postgres:latest
+#    environment:
+#      POSTGRES_PASSWORD: example
+#    volumes:
+#      - db_data:/var/lib/postgresql/data
+#      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#    ports:
+#      - "5432:5432"
+  gamesession-api:
+    image: gamesession-api:latest
+    build: ../..
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:example@db:5432/postgres
+volumes:
+  db_data:

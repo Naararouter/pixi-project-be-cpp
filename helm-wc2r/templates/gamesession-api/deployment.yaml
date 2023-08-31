@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamesession-api-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gamesession-api
+  template:
+    metadata:
+      labels:
+        app: gamesession-api
+    spec:
+      containers:
+        - name: gamesession-api
+          image: gamesession-api:latest
+          {{- if eq .Values.env "dev-local" }}
+          imagePullPolicy: Never
+          {{- end }}
+          ports:
+            - containerPort: 8000

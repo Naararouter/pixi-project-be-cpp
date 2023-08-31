@@ -10,6 +10,9 @@
 
 #include "oatpp/core/macro/component.hpp"
 
+#include "oatpp-websocket/ConnectionHandler.hpp"
+#include "websocket/WSListener.hpp"
+
 /**
  *  Class which creates and holds Application components and registers components in oatpp::base::Environment
  *  Order of components initialization is from top to bottom
@@ -41,18 +44,22 @@ public:
     }());
 
     /**
-     *  Create ConnectionHandler component which uses Router component to route requests
-     */
-    OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, serverConnectionHandler)([] {
-
+   *  Create http ConnectionHandler
+   */
+    OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, httpConnectionHandler)("http" /* qualifier */, [] {
         OATPP_COMPONENT(std::shared_ptr<oatpp::web::server::HttpRouter>, router); // get Router component
-        OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper); // get ObjectMapper component
-
-        auto connectionHandler = oatpp::web::server::HttpConnectionHandler::createShared(router);
-        //connectionHandler->setErrorHandler(std::make_shared<ErrorHandler>(objectMapper));
-        return connectionHandler;
-
+        return oatpp::web::server::HttpConnectionHandler::createShared(router);
     }());
+
+    /**
+     *  Create websocket connection handler
+     */
+    OATPP_CREATE_COMPONENT(std::shared_ptr<oatpp::network::ConnectionHandler>, websocketConnectionHandler)("websocket" /* qualifier */, [] {
+        auto connectionHandler = oatpp::websocket::ConnectionHandler::createShared();
+        connectionHandler->setSocketInstanceListener(std::make_shared<WSInstanceListener>());
+        return connectionHandler;
+    }());
+
 
 };
 
