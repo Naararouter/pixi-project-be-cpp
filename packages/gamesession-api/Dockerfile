@@ -46,9 +46,6 @@ COPY . .
 
 # Build the application
 RUN mkdir build && cd build && cmake .. && make
-
-# TEMPORARY
-COPY ./frontend/public ./build/public
 #
 ## The command that will be run when the container is started
 WORKDIR /usr/src/app/build
