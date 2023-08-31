@@ -14,7 +14,10 @@ add_library(${project_name}-lib
         websocket/WSListener.hpp
         StaticController.hpp
         AppComponent.hpp
-        main.cpp)
+        main.cpp
+        GameEvent.cpp
+        GameSession.cpp
+)
 
 target_link_libraries(${project_name}-lib
         PUBLIC oatpp::oatpp

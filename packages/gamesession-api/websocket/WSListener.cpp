@@ -1,5 +1,12 @@
 
 #include "WSListener.hpp"
+#include "../GameSession.cpp"
+
+#include "oatpp/core/macro/component.hpp"  // For OATPP_COMPONENT
+#include "oatpp/parser/json/mapping/ObjectMapper.hpp"  // For objectMapper
+#include "oatpp/core/Types.hpp"
+
+extern GameSession globalGameSession;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // WSListener
@@ -27,6 +34,9 @@ void WSListener::readMessage(const WebSocket& socket, v_uint8 opcode, p_char8 da
     OATPP_LOGD(TAG, "onMessage message='%s'", wholeMessage->c_str());
 
     /* Send message in reply */
+      OATPP_COMPONENT(std::shared_ptr<oatpp::data::mapping::ObjectMapper>, objectMapper);
+      auto dynamicData = objectMapper->readFromString<oatpp::Any>(wholeMessage);
+      globalGameSession.pushEvent(GameEvent(wholeMessage));
     socket.sendOneFrameText( "Hello from oatpp!: " + wholeMessage);
 
   } else if(size > 0) { // message frame received

@@ -1,10 +1,12 @@
 #include "AppComponent.hpp"
 
 #include "StaticController.hpp"
+#include "GameSession.cpp"
 
 #include "oatpp/network/Server.hpp"
 
 #include <iostream>
+
 
 void run() {
 
@@ -32,6 +34,8 @@ void run() {
     server.run();
 
 }
+
+GameSession globalGameSession;
 
 /**
  *  main
