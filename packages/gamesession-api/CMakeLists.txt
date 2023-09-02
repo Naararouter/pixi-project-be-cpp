@@ -17,6 +17,9 @@ add_library(${project_name}-lib
         main.cpp
         GameEvent.cpp
         GameSession.cpp
+        GameEvent.hpp
+        GameSession.hpp
+        dto/WSMessage.hpp
 )
 
 target_link_libraries(${project_name}-lib

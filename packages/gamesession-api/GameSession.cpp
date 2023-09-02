@@ -1,15 +1,9 @@
 #include <string>
 
-#include "./GameEvent.cpp"
+#include "./GameSession.hpp"
 
-class GameSession {
-public:
-    void pushEvent(const GameEvent& event) {
-        m_events.push_back(event);
-    }
+void GameSession::pushEvent(const GameEvent& event) {
+    m_events.push_back(event);
+}
 
-    const std::vector<GameEvent>& getEvents() const { return m_events; }
-
-private:
-    std::vector<GameEvent> m_events;
-};
+const std::vector<GameEvent>& GameSession::getEvents() const { return m_events; }
