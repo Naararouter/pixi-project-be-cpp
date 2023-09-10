@@ -59,6 +59,47 @@ Resources:
                   - 'ecr:GetDownloadUrlForLayer'
                   - "ecr:BatchGetImage"
                 Resource: '*'
+
+  BackendTargetGroup:
+    Type: "AWS::ElasticLoadBalancingV2::TargetGroup"
+    Properties:
+      Port: 8000
+      Protocol: HTTP
+      VpcId: "vpc-0a942c074cfa5948a"
+      TargetType: "ip"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPath: "/health"
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 2
+
+  # Application Load Balancer
+  MyLoadBalancer:
+    Type: "AWS::ElasticLoadBalancingV2::LoadBalancer"
+    Properties:
+      Subnets:
+        - 'subnet-02f406db0cba529b9'
+        - 'subnet-029a74e5c61399913'
+        - 'subnet-04a0be6a0f724c0a3'
+        - 'subnet-029a2c0c092d56da7'
+        - 'subnet-0afc81b467b19e704'
+        - 'subnet-0b7c289ec8ed418ef'
+      SecurityGroups:
+        - !GetAtt LoadBalancerSecurityGroup.GroupId
+
+  # ALB Listener
+  MyLoadBalancerListener:
+    DependsOn: BackendTargetGroup
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: "forward"
+          TargetGroupArn: !Ref BackendTargetGroup
+      LoadBalancerArn: !Ref MyLoadBalancer
+      Port: 80
+      Protocol: "HTTP"
+
   # ECR Repository is created manually as a pre-req
 
   # ECS Cluster for Backend
@@ -83,9 +124,9 @@ Resources:
       ExecutionRoleArn: !Ref FargateExecutionRole
       ContainerDefinitions:
         - Name: 'my-backend-app'
-          Image: !Sub '197945641439.dkr.ecr.us-east-1.amazonaws.com/gamesession-api:latest'
+          Image: '197945641439.dkr.ecr.us-east-1.amazonaws.com/gamesession-api:ce8ac2d73318aa75258dafe834f8f85616787994' #FIXME
           PortMappings:
-            - ContainerPort: 80
+            - ContainerPort: 8000
           LogConfiguration:
             LogDriver: 'awslogs'
             Options:
@@ -93,24 +134,40 @@ Resources:
               awslogs-region: 'us-east-1'
               awslogs-stream-prefix: 'ecs'
 
-  AllowAllHttpSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
+  LoadBalancerSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      GroupDescription: Allow http to client host
+      GroupDescription: Allow traffic from internet to ALB
+      VpcId: "vpc-0a942c074cfa5948a"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
 
+  AllowAllHttpSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+
   # ECS Service Definition for Backend
   BackendService:
+    DependsOn: MyLoadBalancerListener
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: !Ref BackendCluster
       TaskDefinition: !Ref BackendTaskDefinition
       DesiredCount: 1
       LaunchType: 'FARGATE'
+      LoadBalancers:
+        - TargetGroupArn: !Ref BackendTargetGroup
+          ContainerName: 'my-backend-app'
+          ContainerPort: 8000
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: 'ENABLED'
@@ -128,4 +185,8 @@ Outputs:
   FrontendUrl:
     Description: 'URL for Frontend Application'
     Value: !GetAtt 'FrontendBucket.WebsiteURL'
+
+  LoadBalancerDNSName:
+    Description: 'The DNS name of the ALB'
+    Value: !GetAtt 'MyLoadBalancer.DNSName'
 

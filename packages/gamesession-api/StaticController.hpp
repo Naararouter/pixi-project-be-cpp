@@ -42,6 +42,9 @@ public:
         return oatpp::websocket::Handshaker::serversideHandshake(request->getHeaders(), websocketConnectionHandler);
     };
 
+    ENDPOINT("GET", "health", healthCheck) {
+        return createResponse(Status::CODE_200, "OK");
+    }
 };
 
 #include OATPP_CODEGEN_END(ApiController) //<- End Codegen
