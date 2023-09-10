@@ -13,9 +13,9 @@ RUN apt-get update && apt-get install -y \
 
 # Install a newer version of CMake
 WORKDIR /usr/src
-RUN wget https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-aarch64.tar.gz \
-  && tar -xvf cmake-3.26.3-linux-aarch64.tar.gz \
-  && mv cmake-3.26.3-linux-aarch64 /opt/cmake \
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.26.3/cmake-3.26.3-linux-x86_64.tar.gz \
+  && tar -xvf cmake-3.26.3-linux-x86_64.tar.gz \
+  && mv cmake-3.26.3-linux-x86_64 /opt/cmake \
   && ln -s /opt/cmake/bin/cmake /usr/local/bin/cmake
 
 # Fetch, build and install oatpp

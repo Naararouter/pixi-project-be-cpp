@@ -1,0 +1,131 @@
+Resources:
+
+  # Frontend S3 Bucket
+  FrontendBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: 'dp-test-frontend-bucket'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # Bucket Policy to allow public read
+  FrontendBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action:
+              - s3:GetObject
+            Resource: !Sub 'arn:aws:s3:::${FrontendBucket}/*'
+
+  FargateExecutionRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'FargateExecutionRole'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'ecs-tasks.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: 'FargateExecutionPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+              - Effect: Allow
+                Action:
+                  - 'ecr:GetAuthorizationToken'
+                  - 'ecr:BatchCheckLayerAvailability'
+                  - 'ecr:GetDownloadUrlForLayer'
+                  - "ecr:BatchGetImage"
+                Resource: '*'
+  # ECR Repository is created manually as a pre-req
+
+  # ECS Cluster for Backend
+  BackendCluster:
+    Type: 'AWS::ECS::Cluster'
+
+  CloudWatchLogsGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: '/ecs/my-backend-app'
+      RetentionInDays: 14  # or whatever retention you want
+
+  # ECS Task Definition for Backend
+  BackendTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      Cpu: '256'
+      Memory: '512'
+      NetworkMode: 'awsvpc'
+      RequiresCompatibilities:
+        - 'FARGATE'
+      ExecutionRoleArn: !Ref FargateExecutionRole
+      ContainerDefinitions:
+        - Name: 'my-backend-app'
+          Image: !Sub '197945641439.dkr.ecr.us-east-1.amazonaws.com/gamesession-api:latest'
+          PortMappings:
+            - ContainerPort: 80
+          LogConfiguration:
+            LogDriver: 'awslogs'
+            Options:
+              awslogs-group: !Ref CloudWatchLogsGroup
+              awslogs-region: 'us-east-1'
+              awslogs-stream-prefix: 'ecs'
+
+  AllowAllHttpSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # ECS Service Definition for Backend
+  BackendService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      Cluster: !Ref BackendCluster
+      TaskDefinition: !Ref BackendTaskDefinition
+      DesiredCount: 1
+      LaunchType: 'FARGATE'
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: 'ENABLED'
+          SecurityGroups:
+            - !GetAtt AllowAllHttpSecurityGroup.GroupId
+          Subnets:
+            - 'subnet-02f406db0cba529b9'
+            - 'subnet-029a74e5c61399913'
+            - 'subnet-04a0be6a0f724c0a3'
+            - 'subnet-029a2c0c092d56da7'
+            - 'subnet-0afc81b467b19e704'
+            - 'subnet-0b7c289ec8ed418ef'
+
+Outputs:
+  FrontendUrl:
+    Description: 'URL for Frontend Application'
+    Value: !GetAtt 'FrontendBucket.WebsiteURL'
+

@@ -2,6 +2,7 @@
 #define GAME_SESSION_HPP
 
 #include "./GameEvent.hpp"
+#include <vector>
 
 class GameSession {
 public:

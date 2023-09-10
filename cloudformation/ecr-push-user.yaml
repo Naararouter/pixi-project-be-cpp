@@ -1,0 +1,44 @@
+Resources:
+
+  ECRPushUser:
+    Type: 'AWS::IAM::User'
+    Properties: {}
+
+  ECRPushUserAccessKey:
+    Type: 'AWS::IAM::AccessKey'
+    Properties:
+      UserName:
+        Ref: ECRPushUser
+
+  ECRFullAccessPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: 'ECRFullAccessPolicy'
+      Users:
+        - Ref: ECRPushUser
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: 'FullAccessToECR'
+            Effect: 'Allow'
+            Action:
+              - 'ecr:GetDownloadUrlForLayer'
+              - 'ecr:BatchGetImage'
+              - 'ecr:BatchCheckLayerAvailability'
+              - 'ecr:PutImage'
+              - 'ecr:InitiateLayerUpload'
+              - 'ecr:UploadLayerPart'
+              - 'ecr:CompleteLayerUpload'
+            Resource: '*'
+
+Outputs:
+  AccessKeyId:
+    Value:
+      Ref: ECRPushUserAccessKey
+    Description: 'IAM User Access Key ID'
+
+  SecretAccessKey:
+    Value: !GetAtt
+      - ECRPushUserAccessKey
+      - SecretAccessKey
+    Description: 'IAM User Secret Access Key'
